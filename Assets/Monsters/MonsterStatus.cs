@@ -1,31 +1,50 @@
 using UnityEngine;
 
-public class MonsterStatus : MonoBehaviour {
-    private Monster monster;
-    private float time = 0.0f;
+namespace Monsters
+{
+    public sealed class MonsterStatus : MonoBehaviour
+    {
+        public bool _isPoison;
+        public float _poisonDamage;
 
-    public bool isPoison = false;
-    public float poisonDamage;
+        public bool _isFreeze;
+        public float _freezeEffect;
 
-    public bool isFreeze = false;
-    public float freezeEffect;
+        [SerializeField]
+        private Monster _monster;
 
-    private void Start() {
-        monster = gameObject.GetComponent<Monster>();
-    }
+        [SerializeField]
+        private float _poisonTickInterval = 1f;
 
-    private void Update() {
-        time += Time.deltaTime;
+        private float _time;
 
-        // 독
-        if (time >= 1.0f) {
-            if (isPoison)
-                monster.monsterStruct.hp -= (int) poisonDamage;
-            time = 0.0f;
+        private void Update()
+        {
+            _time += Time.deltaTime;
+
+            if (_time >= _poisonTickInterval)
+            {
+                if (_isPoison)
+                {
+                    TickPoison();
+                }
+                _time = 0.0f;
+            }
+
+            if (_isFreeze)
+            {
+                ApplyFreeze();
+            }
         }
 
-        // 얼음
-        if (isFreeze)
-            monster.monsterStruct.moveSpeed = 1 - (freezeEffect * 0.01f);
+        private void TickPoison()
+        {
+            _monster.MonsterStruct.hp -= (int)_poisonDamage;
+        }
+
+        private void ApplyFreeze()
+        {
+            _monster.MonsterStruct.moveSpeed = 1 - _freezeEffect * 0.01f;
+        }
     }
 }

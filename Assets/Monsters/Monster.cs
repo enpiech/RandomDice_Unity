@@ -1,55 +1,94 @@
+using BattleGround;
+using MyBox;
 using UnityEngine;
 
-public class Monster : MonoBehaviour {
-    private GameObject monsterManager;
-    private GameObject player;
+namespace Monsters
+{
+    public sealed class Monster : MonoBehaviour
+    {
+        [Header("Configs")]
+        [SerializeField]
+        [ConstantsSelection(typeof(Vector3))]
+        private Vector3 _direction = Vector3.zero;
 
-    public Vector3 direction = Vector3.zero;
+        public GameObject _hpTextPrefab;
 
-    public MonsterInfo.MonsterStruct monsterStruct;
+        [SerializeField]
+        private SpriteRenderer _spriteRenderer;
 
-    public GameObject hpText;
+        private BattleGroundManager _battleGroundManager = default!;
 
-    private void Start() {
-        monsterManager = GameObject.Find("MonsterManager");
-        player = GameObject.Find("Player");
-        hpText = Instantiate(hpText);
-        direction = Vector3.up;     // 몬스터의 초기 방향은 위쪽
-    }
+        private bool _isInit;
+        private MonsterManager _monsterManager;
+        private Player.Player _player;
 
-    private void Update() {
-        monsterManager.GetComponent<MonsterManager>().loadMonsterSprite(gameObject, monsterStruct.id);
-        updateHpText();         // 몬스터 체력 갱신
-        if (monsterStruct.hp <= 0) die();     // 체력 없으면 사망 처리
-        move();                 // 몬스터 이동
-    }
+        public MonsterInfo.MonsterStruct MonsterStruct;
 
-    // HpText 갱신 및 이동
-    private void updateHpText() {
-        hpText.GetComponent<TextMesh>().text = monsterStruct.hp.ToString();
-        hpText.gameObject.transform.position = transform.position;  // HpText의 이동
-    }
-
-    // 몬스터 이동
-     private void move() {
-        if (transform.position.y >= monsterManager.GetComponent<MonsterManager>().corner1_Y) {
-            if (transform.position.x >= monsterManager.GetComponent<MonsterManager>().corner2_X)
-                direction = Vector3.down;   // 두 번째 모퉁이를 만났을 때의 방향 전환
-            else
-                direction = Vector3.right;  // 첫 번째 모퉁이를 만났을 때의 방향 전환
+        private void Awake()
+        {
+            _isInit = false;
         }
-        transform.position += direction * monsterStruct.moveSpeed * Time.deltaTime;   // 몬스터 이동
-     }
 
-     // 몬스터 사망 처리
-     public void die() {
-        monsterStruct.hp = 0;
-        Destroy(gameObject);      // 몬스터 오브젝트 제거
-        Destroy(hpText);          // HpText 오브젝트 제거
-        monsterManager.GetComponent<MonsterManager>().removeMonster(gameObject);  // 몬스터 리스트에서 몬스터 제거
-        player.GetComponent<Player>().sp += 10;   // SP 획득
-        if (monsterStruct.id >= 2) {
-            player.GetComponent<Player>().sp += 90;   // big 및 보스 몬스터 처치 시 추가 SP 획득
+        private void Update()
+        {
+            if (!_isInit)
+            {
+                return;
+            }
+
+            _monsterManager.LoadMonsterSprite(this, MonsterStruct.id);
+            UpdateHpText();
+            if (MonsterStruct.hp <= 0)
+            {
+                Die();
+                return;
+            }
+            Move();
         }
-     }
+
+        public void Init(BattleGroundManager battleGroundManager, MonsterManager monsterManager, Player.Player player)
+        {
+            _battleGroundManager = battleGroundManager;
+            _monsterManager = monsterManager;
+            _player = player;
+
+            _hpTextPrefab = Instantiate(_hpTextPrefab);
+            _direction = _battleGroundManager.StartDirection;
+        }
+
+        private void UpdateHpText()
+        {
+            _hpTextPrefab.GetComponent<TextMesh>().text = MonsterStruct.hp.ToString();
+            _hpTextPrefab.gameObject.transform.position = transform.position;
+        }
+
+        private void Move()
+        {
+            if (transform.position.y >= _battleGroundManager.FirstCornerY)
+            {
+                _direction = transform.position.x >= _battleGroundManager.SecondCornerX
+                    ? _battleGroundManager.SecondTurnDirection
+                    : _battleGroundManager.FirstTurnDirection;
+            }
+            transform.position += _direction * (MonsterStruct.moveSpeed * Time.deltaTime);
+        }
+
+        private void Die()
+        {
+            MonsterStruct.hp = 0;
+            Destroy(gameObject);
+            Destroy(_hpTextPrefab);
+            _monsterManager.RemoveMonster(gameObject);
+            _player.sp += 10; // SP 획득
+            if (MonsterStruct.id >= 2)
+            {
+                _player.sp += 90; // big 및 보스 몬스터 처치 시 추가 SP 획득
+            }
+        }
+
+        public void SetSprite(Sprite sprite)
+        {
+            _spriteRenderer.sprite = sprite;
+        }
+    }
 }

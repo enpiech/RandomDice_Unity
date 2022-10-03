@@ -1,37 +1,67 @@
 using UnityEngine;
 
-public class WaveObject : MonoBehaviour {
-    public int wave;
-    public GameObject waveText;
+namespace Wave
+{
+    public sealed class WaveObject : MonoBehaviour
+    {
+        [SerializeField]
+        private int _wave;
 
-    public int timer;               // 웨이브 메인 타이머
-    public GameObject timerText;
+        [SerializeField]
+        private TextMesh _waveText;
 
-    private float deltaTimer;        // deltaTime으로 1초 단위를 측정하는 타이머
+        [SerializeField]
+        private float _timer;
 
-    void Start() {
-        wave = 1;
-        deltaTimer = 0;
-        timer = 90;
-    }
+        [SerializeField]
+        private TextMesh _timerText;
 
-    void Update() {
-        // 현재 웨이브를 텍스트에 출력
-        waveText.GetComponent<TextMesh>().text = wave.ToString();
+        [SerializeField]
+        private float _timerInterval = 1f;
 
-        // 타이머의 시간을 텍스트에 출력(mm:ss)
-        timerText.GetComponent<TextMesh>().text = Mathf.FloorToInt(timer / 60).ToString("D2") + ":" + (timer % 60).ToString("D2");
+        private float _deltaTimer;
 
-        // deltaTime 1초마다 타이머 1씩 감소
-        deltaTimer += Time.deltaTime;
-        if (deltaTimer >= 1.0f) {
-            timer -= 1;
-            deltaTimer -= 1.0f;
+        public int Wave => _wave;
+
+        public float Timer => _timer;
+
+        private void Awake()
+        {
+            _deltaTimer = 0;
         }
 
-        // 타이머 음수 방지
-        if (timer < 0)
-            timer = 0;
+        private void Update()
+        {
+            UpdateWaveText();
 
+            UpdateTimerText();
+
+            CountTimer();
+        }
+
+        private void CountTimer()
+        {
+            _deltaTimer += Time.deltaTime;
+            if (_deltaTimer >= _timerInterval)
+            {
+                _timer -= _timerInterval;
+                _deltaTimer -= _timerInterval;
+            }
+
+            if (_timer < 0)
+            {
+                _timer = 0;
+            }
+        }
+
+        private void UpdateTimerText()
+        {
+            _timerText.text = $"{Mathf.FloorToInt(_timer / 60f):D2}:{_timer % 60:D2}";
+        }
+
+        private void UpdateWaveText()
+        {
+            _waveText.text = _wave.ToString();
+        }
     }
 }

@@ -1,19 +1,24 @@
-using System.Collections;
-using System.Collections.Generic;
+using Dice;
 using UnityEngine;
 
-public class PowerUpButton : MonoBehaviour {
-    public int deckIndex;
-    public GameObject diceManager;
-    DiceInfo.DiceStruct [] deckArray;    // 주사위 덱 정보
-    public int diceId;
+namespace Button
+{
+    public class PowerUpButton : MonoBehaviour
+    {
+        public int deckIndex;
+        public GameObject diceManager;
+        public int diceId;
+        private DiceInfo.DiceStruct[] deckArray; // 주사위 덱 정보
 
-    void Start() {
-        deckArray = diceManager.GetComponent<DiceManager>().deckArray;
-    }
+        private void Start()
+        {
+            deckArray = diceManager.GetComponent<DiceManager>().deckArray;
+        }
 
-    void Update() {
-        diceId = deckArray[deckIndex].id;
-        diceManager.GetComponent<DiceManager>().loadDiceSprite(gameObject, deckArray[deckIndex].rarity, deckArray[deckIndex].spriteID);
+        private void Update()
+        {
+            diceId = deckArray[deckIndex].id;
+            diceManager.GetComponent<DiceManager>().loadDiceSprite(gameObject, deckArray[deckIndex].rarity, deckArray[deckIndex].spriteID);
+        }
     }
 }

@@ -1,9 +1,13 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class ExitButton : MonoBehaviour {
-
-    private void OnMouseUp() {
-        SceneManager.LoadScene("LobbyScene");
+namespace Button
+{
+    public class ExitButton : MonoBehaviour
+    {
+        private void OnMouseUp()
+        {
+            SceneManager.LoadScene("LobbyScene");
+        }
     }
 }

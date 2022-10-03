@@ -1,70 +1,96 @@
-using System.Collections;
 using System.Collections.Generic;
+using BattleGround;
 using UnityEngine;
 
-public class MonsterManager : MonoBehaviour {
-    private static int MONSTER_SIZE = 12;
+namespace Monsters
+{
+    public sealed class MonsterManager : MonoBehaviour
+    {
+        private const int MONSTER_SIZE = 12;
+        public static readonly string[] MONSTER_DATA_TEXT = new string[MONSTER_SIZE];
 
-    public float corner1_Y = 0.0f;
-    public float corner2_X = 2.05f;
+        [Header("References")]
+        [SerializeField]
+        private BattleGroundManager _battleGroundManager;
 
-    public GameObject monsterPrefab;
-    public GameObject monsterSpawner;
+        [SerializeField]
+        private Player.Player _player;
 
-    public GameObject monsterDataBaseConnector;
-    public MonsterInfo.MonsterStruct [] monsterInfoArray = new MonsterInfo.MonsterStruct[MONSTER_SIZE];    // 몬스터 정보 배열
-    public static string [] monsterDataText = new string[MONSTER_SIZE];   // DB에서 가져올 몬스터 정보
+        [SerializeField]
+        private Monster _monsterPrefab;
 
-    public List<GameObject> monsterList = new List<GameObject>();   // 몬스터 리스트
+        [SerializeField]
+        private Spawner _monsterSpawner;
 
-    private void Start() {
-        // DB에 연결하여 몬스터 ID에 해당하는 몬스터 정보를 가져옴
-        MonsterDatabaseConnector dbConnector = monsterDataBaseConnector.GetComponent<MonsterDatabaseConnector>();
-        for (int i=0; i<MONSTER_SIZE; i++)
-            dbConnector.getMonsterInfoFromDatabase(i);
-    }
+        [SerializeField]
+        private MonsterDatabaseConnector _monsterDataBaseConnector;
 
-    private void Update() {
-        // DB에서 가져온 몬스터 정보를 덱에 적용
-        for (int i=0; i<MONSTER_SIZE; i++)
-            if (monsterDataText[i] != null)
-                monsterInfoArray[i] = new MonsterInfo.MonsterStruct(monsterDataText[i]);
-    }
+        public List<GameObject> _monsterList = new();
 
-    // 몬스터 추가
-    public void addMonster(int monsterID, int monsterHp) {
-        GameObject newMonster = Instantiate(monsterPrefab, monsterSpawner.transform.position, Quaternion.identity);
-        newMonster.GetComponent<Monster>().monsterStruct = monsterInfoArray[monsterID];
-        newMonster.GetComponent<Monster>().monsterStruct.hp = monsterHp;
+        [SerializeField]
+        private MonsterSprites _monsterSprites;
 
-        int monsterId = newMonster.GetComponent<Monster>().monsterStruct.id;        
+        private readonly MonsterInfo.MonsterStruct[] _monsterInfoArray = new MonsterInfo.MonsterStruct[MONSTER_SIZE];
 
-        // 몬스터를 리스트에 추가
-        if (monsterId == 1)                // 스피드 몬스터는
-            monsterList.Insert(0, newMonster);    // 앞쪽 타겟 우선순위
-        else
-            monsterList.Add(newMonster);
-
-        // 몬스터 오브젝트 크기 보정
-        switch (monsterId) {
-            case 1:
-                newMonster.gameObject.transform.localScale = new Vector3(0.35f, 0.35f, 1);
-                break;
-            case 2:
-                newMonster.gameObject.transform.localScale = new Vector3(0.5f, 0.5f, 1);
-                break;
+        private void Start()
+        {
+            for (var i = 0; i < MONSTER_SIZE; i++)
+            {
+                _monsterDataBaseConnector.getMonsterInfoFromDatabase(i);
+            }
         }
-    }
 
-    // 몬스터 삭제
-    public void removeMonster(GameObject monster) {
-        monsterList.Remove(monster);
-    }
+        private void Update()
+        {
+            for (var i = 0; i < MONSTER_SIZE; i++)
+            {
+                if (MONSTER_DATA_TEXT[i] != null)
+                {
+                    _monsterInfoArray[i] = new MonsterInfo.MonsterStruct(MONSTER_DATA_TEXT[i]);
+                }
+            }
+        }
 
-    // 몬스터 스프라이트 불러오기
-    public void loadMonsterSprite(GameObject monster, int spriteNum) {
-        MonsterSprites monsterSpritesScript = GetComponent<MonsterSprites>();
-        Dice diceScript = monster.GetComponent<Dice>();
-        monster.GetComponent<SpriteRenderer>().sprite = monsterSpritesScript.Sprites[spriteNum];
+        public void AddMonster(int monsterID, int monsterHp)
+        {
+            var newMonster = Instantiate(_monsterPrefab, _monsterSpawner.transform.position, Quaternion.identity);
+
+            newMonster.Init(_battleGroundManager, this, _player);
+            newMonster.MonsterStruct = _monsterInfoArray[monsterID];
+            newMonster.MonsterStruct.hp = monsterHp;
+
+            var monsterId = newMonster.MonsterStruct.id;
+
+            if (monsterId == 1)
+            {
+                _monsterList.Insert(0, newMonster.gameObject);
+            }
+            else
+            {
+                _monsterList.Add(newMonster.gameObject);
+            }
+
+            ChangeMonsterSize(monsterId, newMonster.gameObject);
+        }
+
+        private static void ChangeMonsterSize(int monsterId, GameObject newMonster)
+        {
+            newMonster.transform.localScale = monsterId switch
+            {
+                1 => new Vector3(0.35f, 0.35f, 1),
+                2 => new Vector3(0.5f, 0.5f, 1),
+                _ => newMonster.gameObject.transform.localScale
+            };
+        }
+
+        public void RemoveMonster(GameObject monster)
+        {
+            _monsterList.Remove(monster);
+        }
+
+        public void LoadMonsterSprite(Monster monster, int spriteNum)
+        {
+            monster.SetSprite(_monsterSprites.Sprites[spriteNum]);
+        }
     }
 }
